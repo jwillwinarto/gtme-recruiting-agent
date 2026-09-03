@@ -1,0 +1,6 @@
+.venv/
+.env
+seen.json
+digests/
+feedback.md
+__pycache__/

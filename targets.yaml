@@ -1,0 +1,177 @@
+# ---------------------------------------------------------------------------
+# targets.yaml -- you edit this file. Everything the script needs comes from here.
+# ---------------------------------------------------------------------------
+
+# A few sentences about you. Pasted into the prompt that drafts outreach, so
+# write it the way you'd want it summarized to a stranger.
+about_me: >
+  Recent USC Marshall graduate (BS Business Administration, 4.0 GPA).
+  Background in brand partnerships and account management at 88rising,
+  including sponsor research, brand-fit evaluation, pitch support, and
+  post-campaign performance analysis. Also led operations for student
+  teams and events at LMU, and served as Marketing Officer for the
+  Indonesian Student Association at USC. Currently learning Claude
+  Code, APIs, and automation to build GTM/AI systems, coming from a
+  business and relationship-building background rather than a
+  traditional engineering one.
+
+# What you're looking for, in plain language. Also goes into the draft prompt.
+looking_for: >
+  Entry-level or Associate-level GTM Engineering roles, or adjacent
+  GTM/Revenue Operations roles with a technical, AI-automation
+  component. Interested in roles that combine business/commercial
+  judgment with building automations, agents, or systems for sales
+  and marketing teams.
+
+# Filtering rules. A posting is surfaced only if BOTH conditions pass.
+filters:
+  # Standalone phrases -- a title matches if it contains ANY of these (case-insensitive
+  # substring). For phrases already unambiguous on their own.
+  keywords:
+    - GTM Engineer
+    - GTM Engineering
+    - RevOps
+
+  # AND-logic. A title ALSO matches if it contains at least one `domain` word AND at
+  # least one `execution` word. Neither list alone is enough -- this separates
+  # "Growth Engineer" / "Marketing Operations" (match) from "Product Designer, Growth"
+  # (domain word, no execution word -> no match).
+  keywords_and:
+    domain:        # the area of GTM work
+      - Growth
+      - Sales
+      - Marketing
+      - Revenue
+      - Business
+    execution:     # the technical / systems / building flavor
+      - Engineer
+      - Engineering
+      - Automation
+      - Systems
+      - Operations
+      - Technical
+
+  # Case-insensitive. If the title contains ANY of these as a whole word/phrase (not
+  # immediately followed by another letter), the posting is dropped even when the rules
+  # above matched. `Sales Engineer` blocks technical pre-sales roles that would otherwise
+  # match on Sales (domain) + Engineer (execution); it does NOT block "Sales Engineering
+  # Manager". Leave the list empty ([]) to disable.
+  keywords_exclude:
+    - Senior
+    - Staff
+    - Director
+    - VP
+    - Head of
+    - Lead
+    - Sales Engineer
+  # Case-insensitive substring match against the posting's location text.
+  # A posting matches if ANY entry is found in its location. Add "remote" as its
+  # own entry if you want remote roles. Leave empty ([]) to accept any location.
+  locations:
+    - Los Angeles
+    - Southern California
+    - California
+    - Remote
+    - New York
+
+  # Only surface postings first published within this many days. Omit or set to 0
+  # to disable. Postings with an unknown/unparseable date are kept (not filtered).
+  max_age_days: 14
+
+# The companies to check. `ats` must be exactly "greenhouse", "lever", "ashby",
+# "smartrecruiters", or "recruitee".
+# `slug` is the company identifier in its careers-page URL:
+#   greenhouse      -> boards.greenhouse.io/<slug>  (or job-boards.greenhouse.io/<slug>)
+#   lever           -> jobs.lever.co/<slug>
+#   ashby           -> jobs.ashbyhq.com/<slug>
+#   smartrecruiters -> jobs.smartrecruiters.com/<slug>  (case-sensitive, e.g. "Ubisoft2")
+#   recruitee       -> <slug>.recruitee.com
+# `name` is only used for display in the digest.
+companies:
+  - name: Attentive
+    ats: greenhouse
+    slug: attentive
+  - name: Safari AI
+    ats: greenhouse
+    slug: safariai
+  - name: Stripe
+    ats: greenhouse
+    slug: stripe
+  - name: Tracksuit
+    ats: lever
+    slug: tracksuit-limited
+  - name: Cresta
+    ats: greenhouse
+    slug: cresta
+  - name: Grafana Labs
+    ats: greenhouse
+    slug: grafanalabs
+  - name: GoFundMe
+    ats: greenhouse
+    slug: gofundme
+  - name: Snorkel AI
+    ats: greenhouse
+    slug: snorkelai
+  - name: Everlaw
+    ats: greenhouse
+    slug: everlaw
+  - name: Basis
+    ats: ashby
+    slug: basis-ai
+  - name: Campfire
+    ats: ashby
+    slug: campfire
+  - name: Conveo
+    ats: ashby
+    slug: conveo
+  - name: Vapi
+    ats: ashby
+    slug: vapi
+  - name: Netic
+    ats: ashby
+    slug: netic
+  - name: Harmonic Security
+    ats: ashby
+    slug: harmonic-security-inc
+  - name: Greenhouse
+    ats: greenhouse
+    slug: greenhouse
+  - name: Immuta
+    ats: lever
+    slug: immuta
+  - name: Finix
+    ats: lever
+    slug: finix
+  - name: HHAeXchange
+    ats: lever
+    slug: hhaexchange
+  - name: Cyara
+    ats: lever
+    slug: cyara
+  - name: EnableComp
+    ats: lever
+    slug: enablecomp
+  - name: Ashby
+    ats: ashby
+    slug: ashby
+  - name: Concourse
+    ats: ashby
+    slug: concourse
+  - name: On The Stage
+    ats: smartrecruiters
+    slug: OnTheStage
+  - name: EcoVadis
+    ats: smartrecruiters
+    slug: ecovadis
+  - name: SmartRecruiters
+    ats: smartrecruiters
+    slug: smartrecruiters
+  - name: Ethon AI
+    ats: recruitee
+    slug: ethonai
+  - name: Hypergen
+    ats: recruitee
+    slug: hypergenllc
+  - name: Trusted Shops
+    ats: recruitee
+    slug: trustedshops
