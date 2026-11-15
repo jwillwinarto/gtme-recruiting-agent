@@ -190,3 +190,27 @@
 - Feature shipped disabled (apollo.enabled: false) — genuinely inert
   until a real smoke test resolves doc ambiguity about people/match's
   actual credit cost, before trusting any cost estimate for a real run
+## Sheet sync for the SDR / GTM outreach track (Nov 14)
+
+- Context: the outreach tracker (Google Sheet) needed an "is there an open
+  role right now?" column per company, because an open role turns a coffee
+  chat into a referral conversation; no open role means relationship-building
+  until one opens
+- First tried a Claude scheduled task that web-searches careers pages. Works
+  for any page, but search results lag and it only gets through ~12 companies
+  a day. The ATS JSON APIs this project already uses are exact and instant
+- Decided: new sheet_sync.py instead of bending digest.py. digest.py answers
+  "what's NEW since I last looked" (seen.json); the sheet needs "what's OPEN
+  now". Different question, so a separate entry point that reuses the fetchers
+- The company list lives in the sheet, not YAML, so adding a company in the
+  sheet is enough. The track file (tracks/sdr_gtm.yaml) holds only filters and
+  overrides; first step toward swappable tracks from V2-ideas
+- Board discovery: try name-based slugs on Greenhouse, Ashby, Lever; accept a
+  board only if it's verifiably that company (Greenhouse board name, or the
+  company name appearing in a posting). Generic slugs like "modal" or
+  "attention" can belong to someone else. The found board URL is written back
+  to the sheet's Careers page column, so the sheet doubles as the cache
+- Workday/Workable/custom pages: skipped on purpose and left for the Claude
+  check, rather than adding scrapers
+- Runs on GitHub Actions daily, no Claude API, Google auth via a service
+  account stored as repo secrets

@@ -1,0 +1,5 @@
+# Only what sheet_sync.py needs (no anthropic, no streamlit), so the daily
+# GitHub Actions run installs in seconds.
+requests==2.34.2
+PyYAML==6.0.3
+google-auth>=2.30,<3
