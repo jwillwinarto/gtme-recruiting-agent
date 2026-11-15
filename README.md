@@ -79,6 +79,40 @@ It prints a one-line summary and appends a section to `digests/digest-<today>.md
 labeled `**Run N**` section per run that day, so re-running doesn't lose earlier matches.
 Open that file, edit the drafts, and send the ones worth sending.
 
+## Sheet sync (SDR / BDR / GTM track)
+
+`sheet_sync.py` is a second, separate job. It reads the company list from the
+Companies tab of the outreach tracker Google Sheet, finds each company's job board,
+and writes what's open **right now** into four columns: `Open GTM role?`,
+`Roles found`, `Careers page`, `Checked on`. Role and location filters live in
+`tracks/sdr_gtm.yaml` (SDR, BDR, GTM, growth, sales/revenue ops, AE; NYC, SF or
+US remote). It never touches `targets.yaml`, `seen.json`, `digests/` or
+`feedback.md`, and it never calls the Claude API.
+
+It runs every morning on GitHub Actions (`.github/workflows/sheet-sync.yml`), and
+the Actions tab has a **Run workflow** button for an on-demand run.
+
+One-time setup:
+
+1. In Google Cloud Console, create a project, enable the **Google Sheets API**, create
+   a **service account**, and download a JSON key for it.
+2. Share the Google Sheet with the service account's email (it ends in
+   `iam.gserviceaccount.com`) as an **Editor**.
+3. In this repo on GitHub: Settings → Secrets and variables → Actions → add
+   `GOOGLE_SERVICE_ACCOUNT_JSON` (paste the whole key file) and `SHEET_ID` (the long
+   ID in the sheet's URL).
+
+Try it locally without touching the sheet:
+
+```bash
+pip install -r requirements-sync.txt
+python3 sheet_sync.py tracks/sdr_gtm.yaml --dry-run --companies "Aircall,Strella"
+```
+
+A company whose board is on Workday, Workable or a custom page (or can't be verified
+as that company's) is left untouched for the separate Claude scheduled check. To pin
+a board by hand, add an `overrides` entry in the track file.
+
 ## How "new" works
 
 `seen.json` (created on first run, git-ignored) is the list of postings already shown.

@@ -1,0 +1,91 @@
+# ---------------------------------------------------------------------------
+# tracks/sdr_gtm.yaml -- settings for sheet_sync.py (the SDR / BDR / GTM track).
+#
+# The company LIST does not live here. sheet_sync.py reads company names from
+# the Companies tab of the Google Sheet, so a company added there is checked on
+# the next run. This file only holds the role filters, plus optional per-company
+# overrides for boards that can't be found automatically.
+#
+# targets.yaml (the GTM Engineering digest) is separate and untouched.
+# ---------------------------------------------------------------------------
+
+sheet:
+  # The Sheet ID comes from the SHEET_ID environment variable (a GitHub secret),
+  # so it never sits in this public repo.
+  tab: Companies
+  header_row: 1
+  # Header text of each column the sync reads or writes. Matched by name, so
+  # moving columns around in the sheet doesn't break anything.
+  columns:
+    company: Company
+    priority: Priority
+    open_role: Open GTM role?
+    roles: Roles found
+    careers: Careers page
+    checked: Checked on
+  skip_priority: [Cut]    # rows with this Priority are left alone
+
+filters:
+  # A title counts if it contains ANY of these (case-insensitive). Short tokens
+  # (SDR, BDR, GTM) are matched as whole words so "GTM" doesn't hit inside a word.
+  roles:
+    - sales development
+    - business development rep
+    - SDR
+    - BDR
+    - GTM
+    - go-to-market
+    - go to market
+    - growth
+    - revenue operations
+    - RevOps
+    - sales operations
+    - sales ops
+    - account executive
+    - inbound sales
+    - outbound sales
+    - sales associate
+
+  # Titles containing any of these are still listed, but tagged "(senior)" and
+  # don't make the company a "Yes" on their own.
+  senior: [Senior, Sr., Staff, Principal, Lead, Manager, Director, VP, Vice President, Head of, Chief]
+
+  # Titles containing any of these are dropped even if a role word matched
+  # (stops "Product Designer, Growth" or "Growth Data Scientist").
+  exclude: [Designer, Design, Product Manager, Data Scientist, Scientist, Researcher, Recruiter, Legal, Counsel]
+
+  # A location counts if it contains any of these.
+  locations: [New York, NYC, Brooklyn, San Francisco, SF Bay, Bay Area]
+  # "Remote" counts only for US remote: a remote location that also names any of
+  # these is treated as non-US.
+  non_us_markers: [UK, United Kingdom, London, EMEA, Europe, Germany, France, Spain, Ireland,
+                   Netherlands, Poland, Canada, Toronto, India, Israel, Australia, APAC, LATAM,
+                   Mexico, Brazil, Singapore, Japan]
+
+  max_listed: 4   # roles written to the "Roles found" cell
+
+# Optional overrides, keyed by the company name exactly as it appears in the sheet.
+#   ats: greenhouse | lever | ashby | smartrecruiters | recruitee | skip
+#   slug: the board identifier (see targets.yaml for the URL patterns)
+#   slugs: extra slugs to TRY during auto-discovery (when the name doesn't map cleanly)
+# "skip" = the board is on something this tool can't read (Workday, Workable, a
+# custom page); the Claude scheduled check covers those instead.
+overrides:
+  Aircall: {ats: greenhouse, slug: aircallioinc}
+  Greenhouse Software: {ats: greenhouse, slug: greenhouse}
+  Movable Ink: {ats: greenhouse, slug: movableink}
+  Basis: {ats: ashby, slug: basis-ai}
+  Dataminr: {ats: skip}          # Workday
+  Hugging Face: {ats: skip}      # Workable
+  Integral Ad Science: {slugs: [integraladscience, ias]}
+  Norm Ai: {slugs: [normai, norm-ai]}
+  K Health: {slugs: [khealth, k-health]}
+  VAST Data: {slugs: [vastdata, vast-data]}
+  Reflection AI: {slugs: [reflectionai, reflection-ai, reflection]}
+  Runway: {slugs: [runwayml, runway]}
+  Clay: {slugs: [claylabs, clay]}
+  Modal: {slugs: [modal, modal-labs, modallabs]}
+  Captions: {slugs: [captions, captionsapp]}
+  Attention: {slugs: [attention, attentiontech]}
+  Regal: {slugs: [regal, regalvoice, regal-io]}
+  Strella: {slugs: [strella, strellaai]}
