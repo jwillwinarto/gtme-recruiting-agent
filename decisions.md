@@ -214,3 +214,30 @@
   check, rather than adding scrapers
 - Runs on GitHub Actions daily, no Claude API, Google auth via a service
   account stored as repo secrets
+
+## Sheet sync: first live run and filter fix (Nov 14, later)
+
+- First live run (GitHub Actions, manual trigger): green, 25 of 34
+  companies' boards found and written to the sheet. Overrides were only
+  needed for 4 companies; discovery found the rest (e.g. Clay ->
+  ashby:claylabs, Regal -> lever:regal.ai, Olo -> lever:olo)
+- Reviewed the output by hand, two real problems:
+  1. Enterprise / Strategic / Mid-Market AE roles made companies a "Yes"
+     (Forter, Rogo, Dataiku, UiPath, AlphaSense). Those roles want years
+     of closing experience, so they're not realistic targets for me
+  2. Recruiter roles like "Talent Partner, GTM" matched on "GTM"
+- Fix (PR #2): AE titles count as entry-level only with an entry marker
+  (Associate, SMB, Commercial, Startup, Emerging, Growth) via a new
+  ae_entry list in the track file; everything else is tagged "(senior)".
+  Talent / Recruiting added to exclude
+- Re-run after the fix: false positives gone. Real entry-level openings:
+  Strella (BDR, GTM Engineer), Clay (ClayDR SDR NYC + SF), EliseAI (SDR x2),
+  Regal (BDR), Aircall (BDR), Riskified (Strategic BDR), Hebbia (ADR, GTM
+  Engineer), Basis (GTM Engineer, RevOps Analyst), Rogo and Modal (GTM
+  Engineer)
+- Same lesson as the description-matching attempts: keyword filters need a
+  human pass over real output before they're trusted. Reading 25 rows took
+  5 minutes and caught both bugs
+- Split of work now: GitHub sync owns every company on a readable ATS; the
+  Claude scheduled check only covers Workday / Workable / custom / unknown,
+  and hands a company over by writing an ATS URL into Careers page

@@ -74,11 +74,19 @@ V3+
   directly to an Excel sheet and add a row for each new matching posting/lead
   — so results accumulate in one running spreadsheet instead of separate
   daily files.
+  PARTLY DONE (Nov 14): sheet_sync.py writes current openings into the
+  outreach tracker Google Sheet daily via GitHub Actions (plain REST +
+  service account, not MCP). It writes one row per COMPANY, not per
+  posting; the digest itself is still markdown.
 - Broader company discovery (v3+): instead of hand-picking companies in
   targets.yaml, plug into an existing index/database of companies using
   Greenhouse/Lever (e.g. a paid job-board aggregation API) so keyword
   matching runs across many companies automatically, not just the ones
   I manually added.
+  PARTLY DONE (Nov 14): sheet_sync.py auto-discovers a company's board
+  from just its name (tries slugs on Greenhouse/Ashby/Lever, verifies the
+  board is really that company). First live run found 25 of 34 boards
+  with zero hand-entered slugs beyond 4 overrides.
 - Contact discovery: find a real person to send the drafted outreach
   to (name + LinkedIn/email) at each matching company, instead of
   just producing a draft with no recipient. Likely needs a paid
@@ -104,3 +112,17 @@ V3+
   may need browser-fingerprint mimicry to avoid being blocked. Breaks the
   clean "add a slug to targets.yaml" pattern — each company needs manual
   discovery. Worth it only if a specific must-have company is Workday-only.
+Sheet sync follow-ups (from the first live run, Nov 14)
+- Exclude HR titles: "People Partner GTM" (ElevenLabs) made a company a
+  "Yes". Add People / HR / PM to the track file's exclude list.
+- "Enablement" titles (GTM Enablement, CX Enablement) currently count.
+  Decide whether they belong in the SDR track or only a GTME track.
+- Senior BDR / Senior SDR is tagged "(senior)" and doesn't count as Yes
+  (Movable Ink). Reconsider: one year of BDR experience is often enough,
+  and the title is still the same ladder.
+- 9 companies still need the Claude check (Workday: Dataminr, Integral Ad
+  Science; Workable: Hugging Face; no board found: K Health, VAST Data,
+  Captions; custom pages: Pipedrive, Harri). A Workday fetcher (above)
+  would cover 2 of them.
+- Merge with the GTME track: run digest.py's targets.yaml companies through
+  sheet_sync too, so one sheet shows both tracks.
