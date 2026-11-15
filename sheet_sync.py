@@ -200,8 +200,11 @@ def _greenhouse_board_name(slug):
         return None
 
 
-def try_board(name, ats, slug, verify):
-    """Fetch a board. Returns its jobs, or None if it doesn't exist / isn't this company."""
+def try_board(name, ats, slug, verify, allow_empty=False):
+    """Fetch a board. Returns its jobs, or None if it doesn't exist / isn't this company.
+
+    allow_empty: accept a verified-by-name-only empty board (used for boards already
+    saved in the sheet, where "no postings today" is a real answer)."""
     company = {"name": name, "ats": ats, "slug": slug}
     if verify and ats == "greenhouse":
         board = _greenhouse_board_name(slug)
@@ -215,8 +218,10 @@ def try_board(name, ats, slug, verify):
     except (requests.RequestException, ValueError, KeyError, TypeError):
         return None
     if verify and ats != "greenhouse":
-        if not jobs or not _mentions(jobs, name):
-            return None  # empty board or a different company with the same slug
+        if not jobs:
+            return jobs if allow_empty else None
+        if not _mentions(jobs, name):
+            return None  # a different company with the same slug
     return jobs
 
 
@@ -230,7 +235,9 @@ def find_board(name, cached_url, overrides):
         return (ov["ats"], ov["slug"], jobs, "override") if jobs is not None else None
     cached = board_from_url(cached_url)
     if cached:
-        jobs = try_board(name, cached[0], cached[1], verify=False)
+        # Verified too: a wrong URL typed into the sheet (or added by the Claude
+        # check) shouldn't be trusted forever. Falls through to discovery if so.
+        jobs = try_board(name, cached[0], cached[1], verify=True, allow_empty=True)
         if jobs is not None:
             return (cached[0], cached[1], jobs, "sheet")
     for slug in slug_candidates(name, ov.get("slugs") or ()):
@@ -336,8 +343,14 @@ def main():
 
     print(f"Checking {len(rows)} companies...")
     updates, report = [], {"new_yes": [], "closed": [], "unchecked": [], "skipped": []}
+    tab_a1 = "'" + sh["tab"].replace("'", "''") + "'"
     for r in rows:
-        result = check_company(r["name"], r["careers"], cfg)
+        try:
+            result = check_company(r["name"], r["careers"], cfg)
+        except Exception as e:  # an ATS changed its response shape, etc.
+            print(f"  ! {r['name']}: error {type(e).__name__}: {e} -- left untouched")
+            report["unchecked"].append(r["name"])
+            continue
         if result is None:
             print(f"  ? {r['name']}: no readable job board found -- left for the Claude check")
             report["unchecked"].append(r["name"])
@@ -356,12 +369,12 @@ def main():
         if r["row"]:
             first, last = col_letter(colmap["open_role"]), col_letter(colmap["checked"])
             if colmap["checked"] - colmap["open_role"] == 3:  # K..N side by side
-                updates.append({"range": f"{sh['tab']}!{first}{r['row']}:{last}{r['row']}",
+                updates.append({"range": f"{tab_a1}!{first}{r['row']}:{last}{r['row']}",
                                 "values": [[open_role, text, url, date_cell]]})
             else:
                 for key, val in (("open_role", open_role), ("roles", text),
                                  ("careers", url), ("checked", date_cell)):
-                    updates.append({"range": f"{sh['tab']}!{col_letter(colmap[key])}{r['row']}",
+                    updates.append({"range": f"{tab_a1}!{col_letter(colmap[key])}{r['row']}",
                                     "values": [[val]]})
 
     if not args.dry_run and not args.companies:
