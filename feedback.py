@@ -9,9 +9,10 @@ date) and appends one stub row per posting to feedback.md -- skipping any alread
 logged for that date. You then open feedback.md and change each `verdict: ?` to
 `good` or `bad`, adding an optional reason.
 
-Nothing here reads feedback.md back -- it is a log for you to review by hand
+The CLI never reads feedback.md back -- it is a log for you to review by hand
 (open it, or `grep 'verdict: bad' feedback.md`). This script does not touch
-digest.py, seen.json, or targets.yaml.
+digest.py, seen.json, or targets.yaml. app.py (the local UI) also writes here via
+set_verdict() and log_detection() below, in the same row format.
 """
 
 import re
@@ -126,6 +127,101 @@ def add(date_arg):
     print(f"feedback.py: added {len(new_rows)} new row(s) for {date_str} "
           f"({already} already logged). {count_unrated(out)} row(s) in "
           f"{FEEDBACK_FILE.name} still awaiting a verdict.")
+
+
+# --------------------------------------------------------------------------
+# Writers used by app.py (the local UI). Same file, same `## date` /
+# `- Company | Title` layout as add(), so feedback.md stays the one log.
+# --------------------------------------------------------------------------
+
+def _load_lines():
+    text = FEEDBACK_FILE.read_text() if FEEDBACK_FILE.exists() else HEADER
+    return text.rstrip("\n").split("\n")
+
+
+def _save_lines(lines):
+    FEEDBACK_FILE.write_text("\n".join(lines).rstrip("\n") + "\n")
+
+
+def _section(lines, date_str):
+    """(start, end) of the `## date` section, creating it at the end if missing."""
+    heading = f"## {date_str}"
+    if heading not in lines:
+        while lines and not lines[-1].strip():
+            lines.pop()
+        lines += ["", heading, ""]
+    start = lines.index(heading)
+    end = next((i for i in range(start + 1, len(lines))
+                if lines[i].startswith("## ")), len(lines))
+    return start, end
+
+
+def _one_line(text):
+    return " ".join((text or "").split())
+
+
+def _find_entry(lines, start, end, row, field):
+    """Index of `row` whose next line starts with `  <field>:`, or None."""
+    for i in range(start + 1, end - 1):
+        if lines[i] == row and lines[i + 1].lstrip().startswith(f"{field}:"):
+            return i
+    return None
+
+
+def _upsert(date_str, company, title, field, body):
+    """Replace (or append) the `field` entry for this posting under its date.
+
+    `body` is the list of indented lines that follow the `- Company | Title` row.
+    """
+    lines = _load_lines()
+    start, end = _section(lines, date_str)
+    row = f"- {company} | {title}"
+    i = _find_entry(lines, start, end, row, field)
+    if i is not None:
+        j = i + 1
+        while j < end and lines[j].startswith("  "):  # old entry + wrapped reason lines
+            j += 1
+        lines[i + 1:j] = body
+    else:
+        section = [lines[start], ""] + [ln for ln in lines[start + 1:end]
+                                        if ln.strip() and ln != NO_MATCHES]
+        lines[start:end] = section + [row] + body + [""]
+    _save_lines(lines)
+
+
+def set_verdict(date_str, company, title, verdict, reason=""):
+    """Set `verdict: good|bad  reason: ...` for one posting (seeding its row if needed)."""
+    _upsert(date_str, company, title, "verdict",
+            [f"  verdict: {verdict}  reason: {_one_line(reason)}".rstrip()])
+
+
+def log_detection(date_str, company, title, detected, override, snippet):
+    """Log an experience-detection miss/correction, with the posting text it came from."""
+    kind = "wrong" if detected else "missed"
+    _upsert(date_str, company, title, "detection", [
+        f"  detection: {kind}  detected: {_one_line(detected) or 'none found'}  "
+        f"override: {_one_line(override)}",
+        f'  snippet: "{_one_line(snippet) or "(no posting text saved for this digest)"}"',
+    ])
+
+
+def read_verdicts():
+    """{(date, company, title): (verdict, reason)} for every rated row in feedback.md."""
+    out = {}
+    if not FEEDBACK_FILE.exists():
+        return out
+    date_str = None
+    lines = FEEDBACK_FILE.read_text().splitlines()
+    for i, ln in enumerate(lines):
+        if ln.startswith("## "):
+            date_str = ln[3:].strip()
+        elif ln.startswith("- ") and " | " in ln and i + 1 < len(lines):
+            m = re.match(r"\s+verdict:\s*(\S+)\s+reason:\s?(.*)$", lines[i + 1])
+            if m and m.group(1) != "?":
+                company, title = ln[2:].split(" | ", 1)
+                out.setdefault((date_str, company.strip(), title.strip()),
+                               (m.group(1).lower(), m.group(2).strip()))
+    return out
 
 
 def main():

@@ -49,6 +49,25 @@ match your filters, drops anything it has shown you before, and writes the rest 
 
       Add that line to `~/.zshrc` so it survives new terminal windows.
 
+5. **Apollo API key (optional -- real contact lookup).** If you set `apollo.enabled: true`
+   in `targets.yaml`, drafts can address a real person by name instead of "the right
+   person on your team." This costs Apollo credits and is **off by default**.
+   1. Get your key from your Apollo.io account (Settings -> API), then in your terminal:
+
+      ```bash
+      export APOLLO_API_KEY="..."
+      ```
+
+      Add that line to `~/.zshrc` too.
+   2. In `targets.yaml`, add a `domain:` (the company's own domain, e.g. `cresta.com`) to
+      each company you want this for -- Apollo can only search by domain, not company
+      name, so a company with no `domain:` is skipped for contact lookup (drafts stay
+      generic for it, exactly like before).
+   3. `apollo.max_lookups_per_run` (default 5) caps how many postings get a lookup
+      attempt per run -- the rest just draft generically. Raise it once you've confirmed
+      the real per-call credit cost against your Apollo dashboard (see the plan/PR notes
+      for why this is worth checking before you rely on an estimate).
+
 ## Running it
 
 ```bash

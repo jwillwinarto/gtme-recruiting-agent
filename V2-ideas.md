@@ -1,18 +1,30 @@
 # v2 ideas (not building yet)
 
-- Description-level matching (v2, redo): first attempt (title+desc
-  combined, same AND-logic categories) produced ~224 false-positive
-  matches ("Backend Developer", "Account Executive" both matched) —
-  reverted. Root cause: domain/execution word lists were tuned for
-  short, deliberate titles; common words like Business/Operations/
-  Systems/Technical appear incidentally throughout almost any 500-word
-  description, so the same AND rule doesn't safely generalize to prose.
-  A real fix would need something stricter than "appears anywhere in
-  the text" — e.g. requiring domain+execution words within N words of
-  each other (proximity), a separate/narrower keyword set specifically
-  for description matching, or checking only a specific section
-  (responsibilities) rather than the whole description. Needs real
-  design work, not a quick reapplication of the title rule.
+- Description-level matching (v3, still unsolved): two real attempts now,
+  both reverted.
+  Attempt 1 (co-occurrence anywhere in text): ~224 false positives
+  ("Backend Developer", "Account Executive") — common words like
+  Business/Operations/Systems appear incidentally throughout any prose.
+  Attempt 2 (proximity — domain + execution word within N words of each
+  other): better, but still too noisy on real data. Root cause is more
+  precise now: genuine, common phrases like "sales operations" (staffing
+  context) or "collaborate with product engineering and marketing teams"
+  sit at distance 1-2, structurally identical to a real case like
+  "marketing operations platform" — proximity alone can't distinguish an
+  incidental adjacent phrase from an actual role description. Tightening
+  the window (5→3) barely helped, since these false positives are already
+  at distance 1-2, below any reasonable window.
+  Real, unfixed limitation: also confirmed the original motivating case
+  (Grafana "Staff AI Engineer") would never surface anyway, since it's
+  blocked earlier by the "Staff" seniority exclude — description matching
+  can only ever help NON-excluded titles, a narrower win than originally
+  imagined.
+  Untried next idea: a collaboration-word guard (skip a match if
+  "collaborate/partner/teams/stakeholders" sits within ~3 words of the
+  pair) — not tested yet, would directly target the exact false positives
+  seen tonight ("collaborate with... engineering and marketing teams").
+  Worth a fresh, careful attempt with this guard before trying proximity
+  again from scratch.
 - Draft-quality feedback tooling (mirrors feedback.py): once several
   drafts across different companies exist in saved-drafts.md, consider
   a script to seed/track draft-quality verdicts the same way
@@ -31,6 +43,31 @@
   word-frequency over bad-match titles/reasons) once feedback.md has
   enough real entries to show an actual pattern — don't build against
   no data.
+- Title mismatch between listing and description: found a real case
+  (Basis "Revenue Operations Analyst" on Ashby) where the job's listed
+  title differs from the title used repeatedly inside its own
+  description ("Growth Engineer"). Not a bug in our system - Claude
+  correctly drafted based on the description's actual wording. Worth
+  considering: have Stage B prefer the platform-listed title over
+  anything found in description text, or flag when they diverge, so
+  drafts don't reference a title the reader won't recognize from the
+  actual posting.
+- Stage 2 experience filter should include a qualitative signal, not just
+  numeric: spot-check of 47 unflagged postings found 4 senior roles
+  gated by phrasing like "strong/deep/proven experience" or "senior or
+  staff scope" with no number - detect_experience() correctly returns []
+  for these since it's scoped to numeric patterns, but it means "none
+  found" shouldn't be read as "junior-friendly." Some overlap already
+  caught by the title-based seniority exclude (e.g. "Sr." in title).
+- Real MCP rebuild of Stage B (v3, bigger): to  genuinely use MCP (not
+  just a direct REST call), Stage B's drafting would need to become a
+  real agent tool-use loop, since MCP servers are called BY a model
+  inside such a loop, not from a one-shot API call. This is a much
+  bigger, deliberate rewrite - worth doing as its own project step if
+  I want genuine hands-on MCP experience, rather than forcing it into
+  a task (like contact lookup) that doesn't structurally need it.
+  Apollo (or another tool) could become the first real tool such a
+  loop uses, once it exists.
 
 V3+
 - Excel integration (MCP): instead of a markdown digest, have Claude connect

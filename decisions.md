@@ -92,12 +92,101 @@
   from this end; would need an undocumented internal GraphQL endpoint,
   not worth building for one non-essential company
 
+## 2026-09-09
+
+**GitHub**
+- Pushed the project publicly (github.com/jwillwinarto/gtme-recruiting-agent)
+  to have a shareable link ready for the Saahil call. Verified `.gitignore`
+  correctly excluded `seen.json`, `feedback.md`, `.venv`, and the real API
+  key — only 10 real project files went up
+
+**Years-of-experience detection (display-only, then a real filter)**
+- Motivated directly by a real miss: Basis "Marketing Operations Manager"
+  looked like a strong match but required 4+ years, caught only by
+  manually reading the description
+- Built `detect_experience()` — recall-leaning regex for "N+ years",
+  "N-M years", "at least N years", with guards against timeframes
+  ("in under 2 years") and company-tenure mentions ("our company has
+  10+ years..."). Deliberately over-catches at this stage rather than
+  missing real requirements
+- Shipped display-only first (an "Experience (detected)" digest line),
+  not a filter — same "prove it before it gets power" discipline as
+  every other filter built so far
+- Accuracy sweep across 158 real Ashby postings: 111 flagged cleanly,
+  zero false negatives on numeric phrasings
+- Spot-checked all 47 unflagged postings by hand: confirmed genuinely
+  no false negatives on numbers, but found a real, distinct gap —
+  4 senior roles gated by qualitative language ("strong/deep/proven
+  experience", "senior or staff scope") with no number at all. Logged
+  as a known limitation, not something this build should try to fix
+- Built Stage 2: `max_experience_years` filter, mirroring `max_age_days`
+  in every respect (opt-in, undetected → pass through). Set to 3, based
+  on being at zero real work experience in the field
+- Live-verified against real data: dropped matching count from 7 to 3,
+  and confirmed it would have blocked the exact real case that started
+  the whole feature (Basis "Revenue Operations Analyst", 4-8 years) —
+  a posting already drafted and logged `bad` in feedback.md earlier
+  that same day
+
+**Found, not fixed**
+- A posting's listed title can differ from the title used inside its
+  own description (Basis "Revenue Operations Analyst" internally called
+  itself "Growth Engineer" throughout the body). Not a bug — Claude
+  drafted correctly from the actual text — but worth a future decision
+  on which title Stage B should prefer
+
 ## Still open
-- Config-swapping (`targets.yaml` → parameter, not hardcoded) — next up,
-  to support running a second track (e.g. finance) through the same system
+- Config-swapping (`targets.yaml` → parameter, not hardcoded) — paused
+  in favor of improving the current product first
 - Description-level matching v2 (needs proximity/narrower logic)
+- Qualitative experience/seniority signal (senior/staff/principal scope,
+  "strong/deep experience") as a second gate alongside the numeric one
+- keywords_exclude bypass-on-description-match — now unblocked, since
+  numeric experience detection exists; worth reconsidering
+- Title mismatch handling (listed title vs. description title) for Stage B
 - Contact discovery (who to actually send drafts to)
 - Review analyzer for feedback.md — waiting on more real data
 - Draft-quality feedback tooling — waiting on more real data
 - AI-based fit-checking as a cheap second-pass filter (v3+)
 - Broader company discovery, Excel output
+
+## 2026-09-10
+
+**Apollo.io contact enrichment**
+- Motivated by every draft ending in "point me to the right person" —
+  wanted a real name/title to address instead
+- Researched 6 candidate MCP integrations (contact enrichment, web-search
+  context, Excel, Slack, calendar, company-database verification);
+  chose contact enrichment for highest fit + strongest technical story
+- Signed up for Apollo with USC (.edu) email — confirmed institutional
+  domains aren't blocked by the "personal email" restriction that
+  affects Gmail/Yahoo/etc.; landed on personal-tier credits (limited,
+  not corporate-tier)
+- Important finding: MCP doesn't actually fit this task. Stage B makes
+  one plain API call per draft with no agent tool-use loop — MCP
+  servers need to be called BY a model inside such a loop. Apollo's
+  official MCP server is also a local stdio process, not a hosted URL,
+  so it likely wouldn't be reachable anyway. Building real MCP support
+  would mean rewriting Stage B into a full agent loop — a much bigger,
+  separate change, not a side effect of "add contact lookup"
+- Decided: build with direct REST calls instead (same pattern as all 5
+  existing fetchers), get real contact enrichment working now; treat a
+  genuine MCP rebuild of Stage B as its own deliberate future project
+- Built: apollo_find_contact() — free people search (title/seniority
+  filtered) then one paid enrich call on the single best hit; any
+  failure at any point returns None, never breaks a draft
+- Safety design: max_lookups_per_run: 5, directly sized against a real
+  precedent (a 24-posting backlog run happened once this project) so a
+  repeat can't silently burn unlimited credits
+- Discovered a real gap: Apollo can't search by company name, only by
+  domain — targets.yaml needs an optional domain: field added per
+  company, by hand, for this feature to work on that company
+- Added digest transparency line ("Contact found: Name, Title (via
+  Apollo)") — same audit-trail principle as "Matched via: description"
+  and "Experience (detected)"
+- Verified via mocked HTTP (no real Apollo calls yet): all failure
+  paths correctly return None, no-contact path is byte-identical to
+  prior drafting output, per-run cap correctly limits attempts
+- Feature shipped disabled (apollo.enabled: false) — genuinely inert
+  until a real smoke test resolves doc ambiguity about people/match's
+  actual credit cost, before trusting any cost estimate for a real run

@@ -32,17 +32,20 @@ filters:
     - GTM Engineering
     - RevOps
 
-  # AND-logic. A title ALSO matches if it contains at least one `domain` word AND at
-  # least one `execution` word. Neither list alone is enough -- this separates
-  # "Growth Engineer" / "Marketing Operations" (match) from "Product Designer, Growth"
-  # (domain word, no execution word -> no match).
+  # AND-logic. A title matches if it contains at least one `domain` word AND at least
+  # one `execution` word (neither list alone is enough) -- this separates
+  # "Growth Engineer" / "Marketing Operations" (match) from "Product Designer, Growth".
+  # If `description_window` is set, the same rule ALSO applies to the job description,
+  # but only when a domain word and an execution word land within that many words of
+  # each other (approximating them being used together, not just co-occurring somewhere
+  # in a long page). Such postings are labelled "Matched via: description" in the digest.
   keywords_and:
-    domain:        # the area of GTM work
-      - Growth
+    description_window: 0   # words; omit or 0 -> match on title only
+    domain:        # the area of GTM work ("Business" omitted -- too common in prose:
+      - Growth     #   "business operations/systems/needs" is filler in almost any JD)
       - Sales
       - Marketing
       - Revenue
-      - Business
     execution:     # the technical / systems / building flavor
       - Engineer
       - Engineering
@@ -78,6 +81,24 @@ filters:
   # to disable. Postings with an unknown/unparseable date are kept (not filtered).
   max_age_days: 14
 
+  # Reject postings whose lowest stated years-of-experience requirement exceeds this.
+  # Omit or set to 0 to disable (opt-in). Only catches NUMERIC requirements
+  # ("4+ years", "3-5 years"); qualitative gating ("senior scope", "deep experience")
+  # is not caught. Postings with no detected requirement are kept (not filtered).
+  # max_experience_years: 3
+
+# Optional: look up a real contact at the company via Apollo.io before drafting, so
+# Stage B can address them by name instead of "the right person on your team". Needs
+# APOLLO_API_KEY in your environment (separate from ANTHROPIC_API_KEY) and a `domain:`
+# on each company below you want this for -- no domain, no lookup, generic draft as
+# today. Off by default -- costs Apollo credits (see README) and needs explicit opt-in.
+apollo:
+  enabled: false
+  max_lookups_per_run: 1   # hard cap on Apollo attention per run (search + match combined)
+  titles: [Revenue Operations, RevOps, Sales Operations, GTM, Marketing Operations,
+           Demand Generation, Growth]
+  seniorities: [manager, director, vp]   # deliberately excludes c_suite and entry/intern
+
 # The companies to check. `ats` must be exactly "greenhouse", "lever", "ashby",
 # "smartrecruiters", or "recruitee".
 # `slug` is the company identifier in its careers-page URL:
@@ -87,6 +108,8 @@ filters:
 #   smartrecruiters -> jobs.smartrecruiters.com/<slug>  (case-sensitive, e.g. "Ubisoft2")
 #   recruitee       -> <slug>.recruitee.com
 # `name` is only used for display in the digest.
+# `domain` is optional -- the company's own domain (e.g. cresta.com), used only for the
+# Apollo contact lookup above. Omit it to skip Apollo for that company.
 companies:
   - name: Attentive
     ats: greenhouse
@@ -118,6 +141,10 @@ companies:
   - name: Basis
     ats: ashby
     slug: basis-ai
+    domain: getbasis.ai
+  - name: Profound
+    ats: ashby
+    slug: Profound
   - name: Campfire
     ats: ashby
     slug: campfire
@@ -175,3 +202,36 @@ companies:
   - name: Trusted Shops
     ats: recruitee
     slug: trustedshops
+  - name: Rain
+    ats: ashby
+    slug: rain
+  - name: Tulip
+    ats: greenhouse
+    slug: tulip
+  - name: Garner Health
+    ats: greenhouse
+    slug: garnerhealth
+  - name: Torq
+    ats: greenhouse
+    slug: torq
+  - name: Deepgram
+    ats: ashby
+    slug: Deepgram
+  - name: LiveKit
+    ats: ashby
+    slug: livekit
+  - name: Aikido Security
+    ats: recruitee
+    slug: aikidosecurity
+  - name: Cast AI
+    ats: greenhouse
+    slug: castaigroupinc
+  - name: Higgsfield AI
+    ats: ashby
+    slug: higgsfieldai
+  - name: Tomorrow.io
+    ats: greenhouse
+    slug: tomorrow
+  - name: Defense Unicorns
+    ats: greenhouse
+    slug: defenseunicorns

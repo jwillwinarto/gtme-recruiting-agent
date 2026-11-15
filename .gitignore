@@ -4,3 +4,6 @@ seen.json
 digests/
 feedback.md
 __pycache__/
+experience_overrides.json
+clay_import.csv
+clay_test_set_notes.md
