@@ -52,7 +52,13 @@ filters:
 
   # Titles containing any of these are dropped even if a role word matched
   # (stops "Product Designer, Growth" or "Growth Data Scientist").
-  exclude: [Designer, Design, Product Manager, Data Scientist, Scientist, Researcher, Recruiter, Legal, Counsel]
+  exclude: [Designer, Design, Product Manager, Data Scientist, Scientist, Researcher, Recruiter,
+            Recruiting, Talent, Legal, Counsel]
+
+  # Account Executive titles count as entry-level only if they contain one of
+  # these. Every other AE (Enterprise, Strategic, Mid-Market...) is tagged
+  # "(senior)", since those roles expect years of closing experience.
+  ae_entry: [Associate, SMB, Small Business, Commercial, Startup, Emerging, Growth]
 
   # A location counts if it contains any of these.
   locations: [New York, NYC, Brooklyn, San Francisco, SF Bay, Bay Area]

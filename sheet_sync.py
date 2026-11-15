@@ -76,7 +76,7 @@ GENERIC_WORDS = {"software", "labs", "lab", "inc", "technologies", "technology",
 def load_track(path):
     cfg = yaml.safe_load(Path(path).read_text()) or {}
     f = cfg.setdefault("filters", {})
-    for key in ("roles", "senior", "exclude", "locations", "non_us_markers"):
+    for key in ("roles", "senior", "exclude", "locations", "non_us_markers", "ae_entry"):
         f[key] = [str(x).lower() for x in (f.get(key) or [])]
     f.setdefault("max_listed", 4)
     if not f["roles"]:
@@ -120,6 +120,8 @@ def classify(job, f):
     if not location_counts(job["location"], f):
         return None
     senior = any(_has(s, title) for s in f["senior"])
+    if "account executive" in title and not any(_has(e, title) for e in f["ae_entry"]):
+        senior = True  # Enterprise / Strategic / Mid-Market AE
     return {"title": job["title"], "location": job["location"] or "?", "senior": senior,
             "url": job.get("url", "")}
 
